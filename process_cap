@@ -1,0 +1,158 @@
+#!/bin/bash
+#
+# ProcessCap v1.0
+# By Daniel Demby
+# heliomass@gmail.com
+# http://heliomass.com
+
+# Example cron, which runs every 10 minutes and kills com.apple.IconServicesAgen when it's 40Mb or more.
+#
+# Replace $HOME/Logs/process_cap.log with a path to you logging directory.
+#
+# Note that /usr/local/bin is assumed to be the path where growlnotify lives. If you don't plan to use the --use_growl switch, then you don't need to worry about this:
+#
+# */10 * * * * /bin/bash -c "export PATH=$PATH:/usr/local/bin; $HOME/bin/process_cap --process_name com.apple.IconServicesAgent --process_cap 40 --use_growl >> $HOME/Logs/process_cap.log 2>&1"
+
+# Don't change these!
+export VERSION='1.0'; # Script version
+
+# Script variables
+export PROCESS_NAME=
+export PROCESS_CAP=
+export USE_GROWL=0
+
+# Mac only! (sorry!)
+function check_osx() {
+
+	if [ "$(uname)" == 'Darwin' ]; then
+		return 0
+	else
+		return 1
+	fi
+
+}
+
+# Dependencies
+function check_growl() {
+
+	local __missing_dep=0
+
+	if [ -z "$(which growlnotify)" ]; then
+		echo 'Missing growlnotify.' >&2
+		__missing_dep=1
+	fi
+
+	return $__missing_dep
+
+}
+
+# Help
+function display_help() {
+
+	echo ''
+	echo "Process Cap v${VERSION}"
+	echo ''
+	echo '--process_name'
+	echo '   Name of the process to be capped.'
+	echo ''
+	echo '--process cap'
+	echo '   The amount of memory in megabytes when the process will be killed.'
+	echo ''
+	echo '--use_growl'
+	echo '   Send a Growl notification when the process is terminated.'
+	echo ''
+	echo "--help"
+	echo '   Display this help screen.'
+	echo ''
+
+}
+
+# Parse command arguments
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--process_name)
+			PROCESS_NAME=$2
+			shift 2
+			;;
+		--process_cap)
+			PROCESS_CAP=$2
+			shift 2
+			;;
+		--use_growl)
+			check_growl
+			if [ $? -eq 0 ]; then
+				USE_GROWL=1
+			fi
+			shift
+			;;
+		--help|-h|-?)
+			display_help
+			exit 0
+			;;
+		*)
+			echo "Unrecognised paramter ${1}. Please use the --help switch to see usage." >&2
+			exit 1
+			;;
+	esac
+done
+
+# Check all mandatory paramters were supplied.
+arg_error=0
+if [ -z $PROCESS_NAME ]; then
+	echo 'Please supply --process_name' >&2
+	arg_error=1
+fi
+if [ -z $PROCESS_CAP ]; then
+	echo 'Please supply --process_cap' >&2
+	arg_error=1
+fi
+
+if [ $arg_error -eq 1 ]; then
+	echo 'Use --help to display info on all the possible arguments.' >&2
+	exit 1
+fi
+
+# Check we're running on a Mac.
+check_osx
+if [ $? -ne 0 ]; then
+	echo 'This script will only function under OS X.' >&2
+fi
+
+# Find the first instance of the process for the current user.
+pid=$(pgrep -n -u $USER -f "^${PROCESS_NAME}\$" head -n 1)
+
+# Is the process alive?
+if [ -z "$pid" ]; then
+	echo "No process discovered for ${PROCESS_NAME}." >&2
+	exit 1
+fi
+
+# How much RAM is the process using?
+bytes=$(ps -A -o pid,rss | grep "^ *${pid}" | awk {'print $2'})
+
+if [ -z "$bytes" ]; then
+
+	echo "$(date +"%Y-%m-%d %H:%M:%S"): $PROCESS_NAME - Process $pid found, but unable to tell its memory consumption."
+
+elif [ $(echo $bytes | wc -l) -gt 2 ]; then
+
+	echo "$(date +"%Y-%m-%d %H:%M:%S"): $PROCESS_NAME - Process $pid returned multiple memory lines."
+	ps -A -o pid,rss | grep "^ *${pid}"
+
+else
+
+	# Round the number of bytes up to the nearest megabyte.
+	megabytes=$(expr $bytes / 1024)
+
+	# Is the process above the cap? Then kill it.
+	if [ $megabytes -ge $PROCESS_CAP ]; then
+		echo "$(date +"%Y-%m-%d %H:%M:%S"): $PROCESS_NAME - Killed process $pid (at $megabytes megabytes)."
+		if [ $USE_GROWL -eq 1 ]; then
+			growlnotify --name 'Process Cap' --message "Killed $PROCESS_NAME at $megabytes megabytes."
+		fi
+		kill -9 $pid
+	else
+		echo "$(date +"%Y-%m-%d %H:%M:%S"): $PROCESS_NAME - Did not kill process $pid (at $megabytes megabytes)."
+	fi
+
+fi
