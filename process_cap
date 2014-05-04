@@ -137,7 +137,6 @@ if [ -z "$bytes" ]; then
 elif [ $(echo $bytes | wc -l) -gt 2 ]; then
 
 	echo "$(date +"%Y-%m-%d %H:%M:%S"): $PROCESS_NAME - Process $pid returned multiple memory lines."
-	ps -A -o pid,rss | grep "^ *${pid}"
 
 else
 
