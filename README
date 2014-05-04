@@ -35,7 +35,9 @@ To set up a cron, use something such as:
 
 This will do the following:
 
-• Run the script every 10 minutes
+• Run the script every 10 minutes (assumes the script lives at $HOME/bin/process_cap. If not, change this)
 • Kill com.apple.IconServicesAgent when it reaches 40Mb
 • Provide a Growl notification each time a process is killed
 • Log its activity in $HOME/Logs/process_cap.log (change this or create the directory with: mkdir $HOME/Logs)
+
+(note that the "export PATH=$PATH:/usr/local/bin" command is only needed if you're using the --use_growl switch, as this is the default location of the growlnotify command)
