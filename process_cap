@@ -5,7 +5,7 @@
 # heliomass@gmail.com
 # http://heliomass.com
 
-# Example cron, which runs every 10 minutes and kills com.apple.IconServicesAgen when it's 40Mb or more.
+# Example cron, which runs every 10 minutes and kills com.apple.IconServicesAgent when it's 40Mb or more.
 #
 # Replace $HOME/Logs/process_cap.log with a path to you logging directory.
 #
@@ -119,7 +119,7 @@ if [ $? -ne 0 ]; then
 fi
 
 # Find the first instance of the process for the current user.
-pid=$(pgrep -n -u $USER -f "^${PROCESS_NAME}\$" head -n 1)
+pid=$(pgrep -n -u $USER -f "^${PROCESS_NAME}\$" | head -n 1)
 
 # Is the process alive?
 if [ -z "$pid" ]; then
