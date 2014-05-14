@@ -19,7 +19,7 @@ To see the full range of commands:
 process_cap --help
 
 
-To kill com.apple.IconServicesAgent when it's memory consumption reaches 40Mb:
+To kill com.apple.IconServicesAgent when its memory consumption reaches 40Mb:
 
 process_cap --process_name com.apple.IconServicesAgent --process_cap 40
 
