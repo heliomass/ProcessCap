@@ -26,7 +26,7 @@ process_cap --process_name com.apple.IconServicesAgent --process_cap 40
 
 If you have Growl (http://growl.info) installed and also Growl Notify (http://growl.info/downloads#generaldownloads) as well, you can have ProcessCap generate a Growl notification when it kills the process, for example:
 
-process_cap --process_name com.apple.IconServicesAgent --process_cap 40 -use_growl
+process_cap --process_name com.apple.IconServicesAgent --process_cap 40 --use_growl
 
 
 To set up a cron, use something such as:
